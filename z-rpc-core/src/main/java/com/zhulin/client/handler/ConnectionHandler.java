@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
  * @Date: 2023/2/24
  * @Description: 处理服务的连接，断开，按照服务名筛选
  */
-@Slf4j
 @Data
 public class ConnectionHandler {
     /**
