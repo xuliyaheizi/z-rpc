@@ -1,6 +1,6 @@
 package com.zhulin.serializer.impl;
 
-import com.zhulin.serializer.SerializerFactory;
+import com.zhulin.serializer.SerializeFactory;
 
 import java.io.*;
 
@@ -9,9 +9,9 @@ import java.io.*;
  * @Date: 2023/2/19
  * @Description: JDK序列化方式
  */
-public class JDKSerializerFactory implements SerializerFactory {
+public class JDKSerializeFactory implements SerializeFactory {
     @Override
-    public <T> byte[] serializer(T t) {
+    public <T> byte[] serialize(T t) {
         byte[] data = null;
         try {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -27,7 +27,7 @@ public class JDKSerializerFactory implements SerializerFactory {
     }
 
     @Override
-    public <T> T deSerializer(Class<T> clazz, byte[] bytes) {
+    public <T> T deSerialize(Class<T> clazz, byte... bytes) {
         T outData = null;
         try {
             ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytes));

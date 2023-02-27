@@ -2,7 +2,7 @@ package com.zhulin.serializer.impl;
 
 import com.caucho.hessian.io.Hessian2Input;
 import com.caucho.hessian.io.Hessian2Output;
-import com.zhulin.serializer.SerializerFactory;
+import com.zhulin.serializer.SerializeFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,9 +13,9 @@ import java.io.IOException;
  * @Date: 2023/2/19
  * @Description: Hessian序列化技术
  */
-public class HessianSerializerFactory implements SerializerFactory {
+public class HessianSerializeFactory implements SerializeFactory {
     @Override
-    public <T> byte[] serializer(T t) {
+    public <T> byte[] serialize(T t) {
         byte[] data = null;
         try {
             ByteArrayOutputStream byteOs = new ByteArrayOutputStream();
@@ -32,7 +32,7 @@ public class HessianSerializerFactory implements SerializerFactory {
     }
 
     @Override
-    public <T> T deSerializer(Class<T> clazz, byte[] bytes) {
+    public <T> T deSerialize(Class<T> clazz, byte... bytes) {
         if (bytes == null) {
             return null;
         }

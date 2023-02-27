@@ -3,7 +3,7 @@ package com.zhulin.serializer.impl;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.zhulin.serializer.SerializerFactory;
+import com.zhulin.serializer.SerializeFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,7 +13,7 @@ import java.io.ByteArrayOutputStream;
  * @Date: 2023/2/19
  * @Description: Kryo序列化技术
  */
-public class KryoSerializeFactory implements SerializerFactory {
+public class KryoSerializeFactory implements SerializeFactory {
 
     private static final ThreadLocal<Kryo> kryos = new ThreadLocal<Kryo>() {
         @Override
@@ -24,7 +24,7 @@ public class KryoSerializeFactory implements SerializerFactory {
     };
 
     @Override
-    public <T> byte[] serializer(T t) {
+    public <T> byte[] serialize(T t) {
         Output output = null;
         try {
             Kryo kryo = kryos.get();
@@ -42,7 +42,7 @@ public class KryoSerializeFactory implements SerializerFactory {
     }
 
     @Override
-    public <T> T deSerializer(Class<T> clazz, byte[] bytes) {
+    public <T> T deSerialize(Class<T> clazz, byte... bytes) {
         Input input = null;
         try {
             Kryo kryo = kryos.get();

@@ -5,7 +5,7 @@ package com.zhulin.serializer;
  * @Date: 2023/2/27
  * @Description: 序列化工厂类
  */
-public interface SerializerFactory {
+public interface SerializeFactory {
 
     /**
      * 序列化
@@ -14,15 +14,15 @@ public interface SerializerFactory {
      * @param <T>
      * @return
      */
-    <T> byte[] serializer(T t);
+    <T> byte[] serialize(T t);
 
     /**
      * 反序列化
      *
+     * @param <T>
      * @param clazz
      * @param bytes
-     * @param <T>
      * @return
      */
-    <T> T deSerializer(Class<T> clazz, byte[] bytes);
+    <T> T deSerialize(Class<T> clazz, byte... bytes);
 }
