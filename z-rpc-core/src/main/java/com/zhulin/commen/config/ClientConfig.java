@@ -1,6 +1,5 @@
 package com.zhulin.commen.config;
 
-import io.netty.channel.nio.NioEventLoopGroup;
 import lombok.Data;
 
 /**
@@ -10,5 +9,17 @@ import lombok.Data;
  */
 @Data
 public class ClientConfig {
+    /**
+     * 应用名称
+     */
+    private String applicationName;
 
+    /**
+     * 注册中心地址
+     */
+    private String registerAddr;
+    /**
+     * 注册中心类型
+     */
+    private String registerType;
 }

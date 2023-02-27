@@ -13,4 +13,16 @@ public class ServerConfig {
      * 服务端口号
      */
     private Integer serverPort;
+    /**
+     * 服务名
+     */
+    private String applicationName;
+    /**
+     * 注册中心地址
+     */
+    private String registerAddr;
+    /**
+     * 注册中心类型
+     */
+    private String registerType;
 }
