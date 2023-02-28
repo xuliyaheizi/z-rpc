@@ -1,0 +1,2 @@
+random=com.zhulin.router.impl.RandomRouterImpl
+rate=com.zhulin.router.impl.RateRouterImpl

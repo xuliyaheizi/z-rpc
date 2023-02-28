@@ -1,0 +1,4 @@
+fastJson=com.zhulin.serializer.impl.FastJsonSerializeFactory
+hessian=com.zhulin.serializer.impl.HessianSerializeFactory
+jdk=com.zhulin.serializer.impl.JDKSerializeFactory
+kryo=com.zhulin.serializer.impl.KryoSerializeFactory
