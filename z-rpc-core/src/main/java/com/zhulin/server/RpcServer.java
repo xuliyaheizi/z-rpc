@@ -52,7 +52,7 @@ public class RpcServer {
     public void startApplication() throws InterruptedException {
         boss = new NioEventLoopGroup();
         workers = new NioEventLoopGroup();
-
+        //test
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(boss, workers).channel(NioServerSocketChannel.class)
                 //有数据立马发送
