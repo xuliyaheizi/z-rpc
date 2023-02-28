@@ -78,6 +78,7 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
 
     /**
      * 订阅服务节点内部的数据变化
+     * 监听/ZRPC/com.zhulin.services.UserService/provider/192.168.100.141:8080的数据变化
      *
      * @param newServerNodePath
      */
@@ -85,19 +86,23 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
         zkClient.watchNodeData(newServerNodePath, new Watcher() {
             @Override
             public void process(WatchedEvent watchedEvent) {
+                System.out.println(watchedEvent);
                 String path = watchedEvent.getPath();
                 String nodeData = zkClient.getNodeData(path);
-                nodeData = nodeData.replace(";", "/");
-                ProviderNodeInfo providerNodeInfo = URL.buildProviderNodeFromUrlStr(nodeData);
-                ZRpcEvent iRpcEvent = new ZRpcNodeChangeEvent(providerNodeInfo);
-                ZRpcListenerLoader.sendEvent(iRpcEvent);
-                watchNodeDataChange(newServerNodePath);
+                if (nodeData != null) {
+                    nodeData = nodeData.replace(";", "/");
+                    ProviderNodeInfo providerNodeInfo = URL.buildProviderNodeFromUrlStr(nodeData);
+                    ZRpcEvent iRpcEvent = new ZRpcNodeChangeEvent(providerNodeInfo);
+                    ZRpcListenerLoader.sendEvent(iRpcEvent);
+                    watchNodeDataChange(newServerNodePath);
+                }
             }
         });
     }
 
     /**
      * 监听节点数据
+     * 监听/ZRPC/com.zhulin.services.UserService/provider下是否有数据变化
      *
      * @param newServerNodePath
      */
@@ -105,8 +110,8 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
         zkClient.watchChildNodeData(newServerNodePath, new Watcher() {
             @Override
             public void process(WatchedEvent event) {
-                System.out.println(event);
                 String path = event.getPath();
+                //如果childrenData为空,说明该服务已经没有提供者了
                 List<String> childrenData = zkClient.getChildrenData(path);
                 URLChangeWrapper urlChangeWrapper = new URLChangeWrapper();
                 urlChangeWrapper.setProviderUrl(childrenData);
@@ -143,7 +148,7 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
     }
 
     public static void main(String[] args) {
-        AbstractRegistry zkClient=new ZookeeperRegistry("8.134.120.71:20011");
+        AbstractRegistry zkClient = new ZookeeperRegistry("8.134.120.71:20011");
         Map<String, String> providerNodeInfos = zkClient.getProviderNodeInfos(UserService.class.getName());
         String str = providerNodeInfos.get("192.168.100.141:8080");
         ProviderNodeInfo providerNodeInfo = URL.buildProviderNodeFromUrlStr(str);
@@ -161,6 +166,7 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
             zkClient.deleteNode(getProviderPath(url));
 
         }
+        //创建临时节点
         zkClient.createTemporaryData(getProviderPath(url), urlStr);
         //将信息添加到缓存集合中
         super.register(url);
@@ -181,6 +187,7 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
         if (zkClient.existNode(getConsumerPath(url))) {
             zkClient.deleteNode(getConsumerPath(url));
         }
+        //创建临时有序节点
         zkClient.createTemporarySeqData(getConsumerPath(url), urlStr);
         super.subscriber(url);
     }

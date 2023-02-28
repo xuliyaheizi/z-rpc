@@ -24,7 +24,7 @@ public class JDKInvocationHandler implements InvocationHandler {
     /**
      * 超时时间
      */
-    private Integer timeOut = RpcConstants.DEFAULT_TIME;
+    private Integer timeOut = RpcConstants.DEFAULT_TIMEOUT;
 
     public JDKInvocationHandler(RpcReferenceWrapper rpcReferenceWrapper) {
         this.rpcReferenceWrapper = rpcReferenceWrapper;
@@ -42,6 +42,14 @@ public class JDKInvocationHandler implements InvocationHandler {
         return tryFinishedTask(rpcInfoContent);
     }
 
+    /**
+     * 超时等待
+     *
+     * @param rpcInfoContent
+     * @return
+     * @throws InterruptedException
+     * @throws TimeoutException
+     */
     private Object tryFinishedTask(RpcInfoContent rpcInfoContent) throws InterruptedException, TimeoutException {
         //将传输内容添加到消息队列中
         SEND_QUEUE.add(rpcInfoContent);

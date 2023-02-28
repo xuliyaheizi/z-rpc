@@ -3,6 +3,7 @@ package com.zhulin.commen.cache;
 import com.zhulin.commen.config.ServerConfig;
 import com.zhulin.registry.AbstractRegistry;
 import com.zhulin.registry.URL;
+import com.zhulin.serializer.SerializeFactory;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -29,4 +30,8 @@ public class CommonServerCache {
      * 注册中心
      */
     public static AbstractRegistry REGISTRY_SERVICE;
+    /**
+     * 服务端的序列化方式
+     */
+    public static SerializeFactory SERVER_SERIALIZE_FACTORY;
 }

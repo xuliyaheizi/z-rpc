@@ -10,14 +10,14 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: 监听Java进程被关闭
  */
 @Slf4j
-public class ApplicationShutDownHook {
+public class ServerShutDownHook {
 
     public static void registryShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
                 log.info("[registryShutdownHook] ======= Server Destroy ======");
-                ZRpcListenerLoader.sendSyncEvent(new ZRpcDestroyEvent("destroy"));
+                ZRpcListenerLoader.sendSyncEvent(new ZRpcDestroyEvent("server"));
             }
         }, "serverDestroyTask"));
     }

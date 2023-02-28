@@ -25,4 +25,12 @@ public class ServerConfig {
      * 注册中心类型
      */
     private String registerType;
+    /**
+     * 服务端序列化方式
+     */
+    private String serverSerialize;
+    /**
+     * 限制服务端最大所能接受的数据包体积
+     */
+    private Integer maxServerRequestData;
 }

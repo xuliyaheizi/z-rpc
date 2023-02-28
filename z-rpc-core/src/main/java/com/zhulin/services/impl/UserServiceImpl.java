@@ -10,6 +10,7 @@ import com.zhulin.services.UserService;
 public class UserServiceImpl implements UserService {
     @Override
     public String sayHello(String msg) {
+        int i = 1 / 0;
         return msg + " hello world";
     }
 }

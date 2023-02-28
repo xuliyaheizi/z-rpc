@@ -7,6 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -39,6 +40,7 @@ public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol
         buffer.writeInt(rpcProtocol.getContentLength());
         //内容
         buffer.writeBytes(rpcProtocol.getContent());
+        buffer.writeBytes(RpcConstants.DEFAULT_DECODE_CHAR.getBytes(StandardCharsets.UTF_8));
         list.add(buffer);
     }
 
@@ -58,6 +60,7 @@ public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol
                 ctx.close();
                 return;
             }
+            //这里对应了RpcProtocol对象的contentLength字段
             int length = byteBuf.readInt();
             if (byteBuf.readableBytes() < length) {
                 //说明剩余的数据包不完整
@@ -69,5 +72,10 @@ public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol
             RpcProtocol rpcProtocol = new RpcProtocol(data);
             list.add(rpcProtocol);
         }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        cause.printStackTrace();
     }
 }

@@ -4,22 +4,29 @@ import com.zhulin.commen.config.PropertiesBootstrap;
 import com.zhulin.commen.event.ZRpcListenerLoader;
 import com.zhulin.commen.protocol.RpcProtocolCodec;
 import com.zhulin.commen.utils.CommonUtil;
+import com.zhulin.registry.AbstractRegistry;
+import com.zhulin.registry.RegistryService;
 import com.zhulin.registry.URL;
-import com.zhulin.registry.zookeeper.impl.ZookeeperRegistry;
-import com.zhulin.server.handler.ApplicationShutDownHook;
+import com.zhulin.serializer.SerializeFactory;
 import com.zhulin.server.handler.RpcServiceWrapper;
 import com.zhulin.server.handler.ServerReadHandler;
+import com.zhulin.server.handler.ServerShutDownHook;
 import com.zhulin.services.impl.UserServiceImpl;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.zhulin.commen.cache.CommonCache.EXTENSION_LOADER;
 import static com.zhulin.commen.cache.CommonServerCache.*;
+import static com.zhulin.commen.constants.RpcConstants.DEFAULT_DECODE_CHAR;
 
 /**
  * @Author:ZHULIN
@@ -41,9 +48,17 @@ public class RpcServer {
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(boss, workers).channel(NioServerSocketChannel.class)
                 //有数据立马发送
-                .option(ChannelOption.TCP_NODELAY, true).option(ChannelOption.SO_BACKLOG, 1024).option(ChannelOption.SO_SNDBUF, 16 * 1024).option(ChannelOption.SO_RCVBUF, 16 * 1024).option(ChannelOption.SO_KEEPALIVE, true).childHandler(new ChannelInitializer<NioSocketChannel>() {
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_BACKLOG, 1024)
+                .option(ChannelOption.SO_SNDBUF, 16 * 1024)
+                .option(ChannelOption.SO_RCVBUF, 16 * 1024)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
+                        ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+                        ch.pipeline().addLast(new DelimiterBasedFrameDecoder(SERVER_CONFIG.getMaxServerRequestData(),
+                                delimiter));
                         //服务端日志信息
                         ch.pipeline().addLast(new LoggingHandler());
                         //协议体解码器
@@ -66,7 +81,11 @@ public class RpcServer {
         //初始服务端配置信息
         SERVER_CONFIG = PropertiesBootstrap.loadServiceConfigFormLocal();
         //初始化注册中心
-        REGISTRY_SERVICE = new ZookeeperRegistry();
+        REGISTRY_SERVICE = (AbstractRegistry) EXTENSION_LOADER.exampleClass(RegistryService.class,
+                SERVER_CONFIG.getRegisterType());
+        //初始化服务端序列化方式
+        SERVER_SERIALIZE_FACTORY = EXTENSION_LOADER.exampleClass(SerializeFactory.class,
+                SERVER_CONFIG.getServerSerialize());
     }
 
     /**
@@ -126,6 +145,6 @@ public class RpcServer {
         RpcServiceWrapper rpcServiceWrapper = new RpcServiceWrapper(new UserServiceImpl(), "dev");
         rpcServer.registryService(rpcServiceWrapper);
         rpcServer.startApplication();
-        ApplicationShutDownHook.registryShutdownHook();
+        ServerShutDownHook.registryShutdownHook();
     }
 }

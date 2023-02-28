@@ -6,6 +6,7 @@ import com.zhulin.client.handler.ConnectionHandler;
 import com.zhulin.client.reference.RpcReference;
 import com.zhulin.client.reference.RpcReferenceWrapper;
 import com.zhulin.commen.config.PropertiesBootstrap;
+import com.zhulin.commen.constants.RpcConstants;
 import com.zhulin.commen.event.ZRpcListenerLoader;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.protocol.RpcProtocol;
@@ -13,15 +14,19 @@ import com.zhulin.commen.protocol.RpcProtocolCodec;
 import com.zhulin.commen.utils.CommonUtil;
 import com.zhulin.proxy.jdk.JDKProxyFactory;
 import com.zhulin.registry.AbstractRegistry;
+import com.zhulin.registry.RegistryService;
 import com.zhulin.registry.URL;
-import com.zhulin.registry.zookeeper.impl.ZookeeperRegistry;
-import com.zhulin.router.impl.RandomRouterImpl;
+import com.zhulin.router.ZRouter;
+import com.zhulin.serializer.SerializeFactory;
 import com.zhulin.services.UserService;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 import java.util.Map;
 
+import static com.zhulin.commen.cache.CommonCache.EXTENSION_LOADER;
 import static com.zhulin.commen.cache.CommonClientCache.*;
 
 /**
@@ -41,7 +47,7 @@ import static com.zhulin.commen.cache.CommonClientCache.*;
 public class RpcClient {
 
     private static NioEventLoopGroup worker;
-    private static AbstractRegistry REGISTRY_SERVICE;
+
     private Bootstrap bootstrap = new Bootstrap();
     private static ZRpcListenerLoader zRpcListenerLoader;
 
@@ -55,6 +61,9 @@ public class RpcClient {
         bootstrap.group(worker).channel(NioSocketChannel.class).handler(new ChannelInitializer<NioSocketChannel>() {
             @Override
             protected void initChannel(NioSocketChannel ch) throws Exception {
+                ByteBuf delimiter = Unpooled.copiedBuffer(RpcConstants.DEFAULT_DECODE_CHAR.getBytes());
+                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(CLIENT_CONFIG.getMaxServerRespDataSize(),
+                        delimiter));
                 //日志信息
                 ch.pipeline().addLast(new LoggingHandler());
                 //协议体解编码器
@@ -93,7 +102,7 @@ public class RpcClient {
                 //从消息队列中获取信息内容
                 RpcInfoContent rpcInfoContent = SEND_QUEUE.take();
                 //通过序列化方式将信息序列化为字节数组
-                RpcProtocol rpcProtocol = new RpcProtocol(JSON.toJSONBytes(rpcInfoContent));
+                RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(rpcInfoContent));
                 //发送消息
                 ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(rpcInfoContent);
                 channelFuture.channel().writeAndFlush(rpcProtocol);
@@ -109,8 +118,11 @@ public class RpcClient {
     public void initClientConfig() {
         //初始化客户端配置信息
         CLIENT_CONFIG = PropertiesBootstrap.loadClientConfigFromLocal();
+        //初始化客户端序列化方式
+        CLIENT_SERIALIZE_FACTORY = EXTENSION_LOADER.exampleClass(SerializeFactory.class,
+                CLIENT_CONFIG.getClientSerialize());
         //初始负载均衡策略
-        ZROUTER = new RandomRouterImpl();
+        ZROUTER = EXTENSION_LOADER.exampleClass(ZRouter.class, CLIENT_CONFIG.getRouterStrategy());
     }
 
     /**
@@ -120,7 +132,8 @@ public class RpcClient {
      */
     public void doSubscribeService(Class serviceBean) {
         if (REGISTRY_SERVICE == null) {
-            REGISTRY_SERVICE = new ZookeeperRegistry(CLIENT_CONFIG.getRegisterAddr());
+            REGISTRY_SERVICE = (AbstractRegistry) EXTENSION_LOADER.exampleClass(RegistryService.class,
+                    CLIENT_CONFIG.getRegisterType());
         }
         //构建订阅信息
         URL url = new URL();
@@ -138,7 +151,9 @@ public class RpcClient {
      * 开始和各个provider建立连接，同时监听各个providerNode节点的变化（child变化和nodeData的变化）
      */
     public void doConnectServer() {
+        //与订阅服务的提供者连接
         for (URL providerUrl : SUBSCRIBER_SERVICE_LIST) {
+            //获取该服务的所有提供者IP地址
             List<String> providerIps = REGISTRY_SERVICE.getProviderIps(providerUrl.getServiceName());
             for (String providerIp : providerIps) {
                 try {
@@ -147,11 +162,11 @@ public class RpcClient {
                     log.error("[doConnectServer] connect fail ", e);
                 }
             }
+            //监听服务提供者的变化
             URL url = new URL();
             //servicePath ---> com.zhulin.services.UserService/provider
             url.addParameter("servicePath", providerUrl.getServiceName() + "/provider");
             url.addParameter("providerIps", JSON.toJSONString(providerIps));
-            //客户端在此新增一个订阅功能
             REGISTRY_SERVICE.doAfterSubscribe(url);
         }
     }

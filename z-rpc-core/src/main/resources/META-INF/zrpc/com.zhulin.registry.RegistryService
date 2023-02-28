@@ -1,0 +1,1 @@
+zookeeper=com.zhulin.registry.zookeeper.impl.ZookeeperRegistry

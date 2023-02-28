@@ -4,8 +4,10 @@ import com.zhulin.commen.channel.ChannelFuturePollingRef;
 import com.zhulin.commen.channel.ChannelFutureWrapper;
 import com.zhulin.commen.config.ClientConfig;
 import com.zhulin.commen.protocol.RpcInfoContent;
+import com.zhulin.registry.AbstractRegistry;
 import com.zhulin.registry.URL;
 import com.zhulin.router.ZRouter;
+import com.zhulin.serializer.SerializeFactory;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -27,7 +29,7 @@ public class CommonClientCache {
      */
     public static Map<String, Object> RESP_MAP = new ConcurrentHashMap<>();
     /**
-     * provider名称 --> 该服务有哪些集群URL
+     * 订阅的服务集合
      */
     public static List<URL> SUBSCRIBER_SERVICE_LIST = new ArrayList<>();
 
@@ -54,4 +56,12 @@ public class CommonClientCache {
      */
     public static ZRouter ZROUTER;
     public static ChannelFuturePollingRef CHANNEL_FUTURE_POLLING = new ChannelFuturePollingRef();
+    /**
+     * 客户端序列化方式
+     */
+    public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
+    /**
+     * 客户端的注册中心
+     */
+    public static AbstractRegistry REGISTRY_SERVICE;
 }

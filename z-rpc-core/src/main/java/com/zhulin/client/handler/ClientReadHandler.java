@@ -1,12 +1,14 @@
 package com.zhulin.client.handler;
 
-import com.alibaba.fastjson.JSON;
+import com.zhulin.commen.cache.CommonClientCache;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.protocol.RpcProtocol;
 import com.zhulin.concurrent.TimeoutInvocation;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import lombok.extern.slf4j.Slf4j;
 
+import static com.zhulin.commen.cache.CommonClientCache.CLIENT_SERIALIZE_FACTORY;
 import static com.zhulin.commen.cache.CommonClientCache.RESP_MAP;
 
 /**
@@ -14,14 +16,15 @@ import static com.zhulin.commen.cache.CommonClientCache.RESP_MAP;
  * @Date: 2023/2/24
  * @Description: 响应数据接收处理器
  */
+@Slf4j
 public class ClientReadHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         //获取接收信息
         RpcProtocol rpcProtocol = (RpcProtocol) msg;
-        byte[] content = rpcProtocol.getContent();
         //将字节数组反序列化为RpcInfoContent
-        RpcInfoContent rpcInfoContent = JSON.parseObject(new String(content), RpcInfoContent.class);
+        RpcInfoContent rpcInfoContent = CLIENT_SERIALIZE_FACTORY.deSerialize(RpcInfoContent.class,
+                rpcProtocol.getContent());
         //判断是否有异常信息
         if (rpcInfoContent.getE() != null) {
             rpcInfoContent.getE().printStackTrace();
@@ -34,5 +37,19 @@ public class ClientReadHandler extends ChannelInboundHandlerAdapter {
         timeoutInvocation.setRpcInfoContent(rpcInfoContent);
         RESP_MAP.put(rpcInfoContent.getUuid(), timeoutInvocation);
         timeoutInvocation.release();
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        log.debug("远程主机{}已关闭", ctx.channel().remoteAddress());
+        System.out.println(CommonClientCache.SUBSCRIBER_SERVICE_LIST);
+        System.out.println(CommonClientCache.URL_MAP);
+        System.out.println(CommonClientCache.CONNECT_MAP);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("远程主机{}由于{}原因已关闭", ctx.channel(), cause.getMessage());
+        cause.printStackTrace();
     }
 }
