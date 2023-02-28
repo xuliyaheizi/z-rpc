@@ -25,4 +25,10 @@ public class RpcConstants {
     //客户端与服务端最大接收数据包体积
     public static final int SERVER_DEFAULT_MSG_LENGTH = 1024 * 10;
     public static final int CLIENT_DEFAULT_MSG_LENGTH = 1024 * 10;
+    //服务端默认执行读取请求数据的线程数
+    public static final Integer DEFAULT_THREAD_NUMS = 256;
+    //服务端默认执行读取请求数据的阻塞队列大小
+    public static final Integer DEFAULT_QUEUE_SIZE = 512;
+    //服务端默认最大连接数
+    public static final Integer DEFAULT_MAX_CONNECTION_NUMS = DEFAULT_THREAD_NUMS + DEFAULT_QUEUE_SIZE;
 }

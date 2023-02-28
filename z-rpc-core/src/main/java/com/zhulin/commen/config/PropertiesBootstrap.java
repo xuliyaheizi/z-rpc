@@ -39,12 +39,12 @@ public class PropertiesBootstrap {
         serverConfig.setRegisterType(PropertiesLoader.getPropertiesStrDefault(REGISTER_TYPE, DEFAULT_REGISTER_TYPE));
         serverConfig.setServerSerialize(PropertiesLoader.getPropertiesStrDefault(SERVER_SERIALIZE_TYPE,
                 JDK_SERIALIZE_TYPE));
-        //serverConfig.setServerBizThreadNums(PropertiesLoader.getPropertiesIntegerDefault(SERVER_BIZ_THREAD_NUMS,
-        //        DEFAULT_THREAD_NUMS));
-        //serverConfig.setServerQueueSize(PropertiesLoader.getPropertiesIntegerDefault(SERVER_QUEUE_SIZE,
-        //        DEFAULT_QUEUE_SIZE));
-        //serverConfig.setMaxConnections(PropertiesLoader.getPropertiesIntegerDefault(SERVER_MAX_CONNECTION,
-        //        DEFAULT_MAX_CONNECTION_NUMS));
+        serverConfig.setServerBizThreadNums(PropertiesLoader.getPropertiesIntegerDefault(SERVER_BIZ_THREAD_NUMS,
+                DEFAULT_THREAD_NUMS));
+        serverConfig.setServerQueueSize(PropertiesLoader.getPropertiesIntegerDefault(SERVER_QUEUE_SIZE,
+                DEFAULT_QUEUE_SIZE));
+        serverConfig.setMaxConnections(PropertiesLoader.getPropertiesIntegerDefault(SERVER_MAX_CONNECTION,
+                DEFAULT_MAX_CONNECTION_NUMS));
         serverConfig.setMaxServerRequestData(PropertiesLoader.getPropertiesIntegerDefault(SERVER_MAX_DATA_SIZE,
                 SERVER_DEFAULT_MSG_LENGTH));
         return serverConfig;

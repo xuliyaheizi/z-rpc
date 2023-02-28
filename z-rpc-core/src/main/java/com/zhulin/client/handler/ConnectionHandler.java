@@ -3,6 +3,7 @@ package com.zhulin.client.handler;
 import com.zhulin.commen.channel.ChannelFutureWrapper;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.utils.CommonUtil;
+import com.zhulin.concurrent.TimeoutInvocation;
 import com.zhulin.registry.URL;
 import com.zhulin.registry.zookeeper.ProviderNodeInfo;
 import com.zhulin.router.Selector;
@@ -55,7 +56,7 @@ public class ConnectionHandler {
         ProviderNodeInfo providerNodeInfo = URL.buildProviderNodeFromUrlStr(providerURLInfo);
         //实例channelFuture通道包装类
         ChannelFutureWrapper channelFutureWrapper = new ChannelFutureWrapper(channelFuture, host, port,
-                providerNodeInfo.getWeight(),providerNodeInfo.getGroup());
+                providerNodeInfo.getWeight(), providerNodeInfo.getGroup());
         //服务连接之后，将服务提供者的ip添加到缓存中
         SERVICE_ADDRESS.add(providerIp);
         //在CONNECT_MAP中获取服务提供者的信息
@@ -115,14 +116,27 @@ public class ConnectionHandler {
      */
     public static ChannelFuture getChannelFuture(RpcInfoContent rpcInfoContent) {
         String providerServiceName = rpcInfoContent.getTargetServiceName();
-        //List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(providerServiceName);
         ChannelFutureWrapper[] channelFutureWrappers = SERVICE_ROUTER_MAP.get(providerServiceName);
         if (channelFutureWrappers == null || channelFutureWrappers.length == 0) {
+            rpcInfoContent.setRetry(0);
             rpcInfoContent.setE(new RuntimeException("no provider exist for " + providerServiceName));
             rpcInfoContent.setResponse(null);
+            //直接交给响应线程那边处理（响应线程在代理类内部的invoke函数中，那边会取出对应的uuid的值，然后判断）
+            TimeoutInvocation timeoutInvocation = (TimeoutInvocation) RESP_MAP.get(rpcInfoContent.getUuid());
+            timeoutInvocation.setRpcInfoContent(rpcInfoContent);
+            RESP_MAP.put(rpcInfoContent.getUuid(), timeoutInvocation);
+            //通知代理类中的响应线程
+            timeoutInvocation.release();
             log.error("channelFutureWrappers is null");
             return null;
         }
+        //执行过滤器逻辑
+        List<ChannelFutureWrapper> channelFutureWrapperList = new ArrayList<>(channelFutureWrappers.length);
+        for (int i = 0; i < channelFutureWrappers.length; i++) {
+            channelFutureWrapperList.add(channelFutureWrappers[i]);
+        }
+        CLIENT_FILTER_CHAIN.doFilter(channelFutureWrapperList, rpcInfoContent);
+        //通过负载均衡算法获取合适的服务提供者
         Selector selector = new Selector();
         selector.setProviderServiceName(providerServiceName);
         selector.setChannelFutureWrappers(channelFutureWrappers);

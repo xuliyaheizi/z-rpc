@@ -1,6 +1,5 @@
 package com.zhulin.client.handler;
 
-import com.zhulin.commen.cache.CommonClientCache;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.protocol.RpcProtocol;
 import com.zhulin.concurrent.TimeoutInvocation;
@@ -42,9 +41,6 @@ public class ClientReadHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.debug("远程主机{}已关闭", ctx.channel().remoteAddress());
-        System.out.println(CommonClientCache.SUBSCRIBER_SERVICE_LIST);
-        System.out.println(CommonClientCache.URL_MAP);
-        System.out.println(CommonClientCache.CONNECT_MAP);
     }
 
     @Override

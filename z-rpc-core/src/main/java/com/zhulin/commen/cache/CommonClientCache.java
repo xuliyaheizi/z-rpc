@@ -4,6 +4,7 @@ import com.zhulin.commen.channel.ChannelFuturePollingRef;
 import com.zhulin.commen.channel.ChannelFutureWrapper;
 import com.zhulin.commen.config.ClientConfig;
 import com.zhulin.commen.protocol.RpcInfoContent;
+import com.zhulin.filter.client.ClientFilterChain;
 import com.zhulin.registry.AbstractRegistry;
 import com.zhulin.registry.URL;
 import com.zhulin.router.ZRouter;
@@ -64,4 +65,8 @@ public class CommonClientCache {
      * 客户端的注册中心
      */
     public static AbstractRegistry REGISTRY_SERVICE;
+    /**
+     * 客户端过滤链
+     */
+    public static ClientFilterChain CLIENT_FILTER_CHAIN;
 }

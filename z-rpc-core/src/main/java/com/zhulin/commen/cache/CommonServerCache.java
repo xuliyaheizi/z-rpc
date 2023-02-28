@@ -1,9 +1,13 @@
 package com.zhulin.commen.cache;
 
 import com.zhulin.commen.config.ServerConfig;
+import com.zhulin.filter.server.ServerAfterFilterChain;
+import com.zhulin.filter.server.ServerBeforeFilterChain;
 import com.zhulin.registry.AbstractRegistry;
 import com.zhulin.registry.URL;
 import com.zhulin.serializer.SerializeFactory;
+import com.zhulin.server.dispatcher.ServerChannelDispatcher;
+import com.zhulin.server.wrapper.RpcServiceWrapper;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -34,4 +38,15 @@ public class CommonServerCache {
      * 服务端的序列化方式
      */
     public static SerializeFactory SERVER_SERIALIZE_FACTORY;
+
+    public static Map<String, RpcServiceWrapper> PROVIDER_SERVICE_WRAPPER_MAP = new ConcurrentHashMap<>();
+    /**
+     * 服务端前置与后置过滤器
+     */
+    public static ServerBeforeFilterChain SERVER_BEFORE_FILTER_CHAIN;
+    public static ServerAfterFilterChain SERVER_AFTER_FILTER_CHAIN;
+    /**
+     * 服务端多线程处理客户端请求数据
+     */
+    public static ServerChannelDispatcher SERVER_CHANNEL_DISPATCHER = new ServerChannelDispatcher();
 }

@@ -12,6 +12,8 @@ import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.protocol.RpcProtocol;
 import com.zhulin.commen.protocol.RpcProtocolCodec;
 import com.zhulin.commen.utils.CommonUtil;
+import com.zhulin.filter.ZClientFilter;
+import com.zhulin.filter.client.ClientFilterChain;
 import com.zhulin.proxy.jdk.JDKProxyFactory;
 import com.zhulin.registry.AbstractRegistry;
 import com.zhulin.registry.RegistryService;
@@ -31,10 +33,12 @@ import io.netty.handler.logging.LoggingHandler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.zhulin.commen.cache.CommonCache.EXTENSION_LOADER;
+import static com.zhulin.commen.cache.CommonCache.EXTENSION_LOADER_CLASS_CACHE;
 import static com.zhulin.commen.cache.CommonClientCache.*;
 
 /**
@@ -54,7 +58,7 @@ public class RpcClient {
     /**
      * 启动netty客户端
      */
-    public RpcReference initApplication() throws InterruptedException {
+    public RpcReference initApplication() throws InstantiationException, IllegalAccessException {
         //初始配置信息
         this.initClientConfig();
         worker = new NioEventLoopGroup();
@@ -115,7 +119,7 @@ public class RpcClient {
     /**
      * 初始客户端基本服务
      */
-    public void initClientConfig() {
+    public void initClientConfig() throws InstantiationException, IllegalAccessException {
         //初始化客户端配置信息
         CLIENT_CONFIG = PropertiesBootstrap.loadClientConfigFromLocal();
         //初始化客户端序列化方式
@@ -123,6 +127,19 @@ public class RpcClient {
                 CLIENT_CONFIG.getClientSerialize());
         //初始负载均衡策略
         ZROUTER = EXTENSION_LOADER.exampleClass(ZRouter.class, CLIENT_CONFIG.getRouterStrategy());
+        //初始化过滤链 SPI配置文件中指定过滤的顺序
+        EXTENSION_LOADER.loadExtension(ZClientFilter.class);
+        ClientFilterChain clientFilterChain = new ClientFilterChain();
+        LinkedHashMap<String, Class> clientFilterMap =
+                EXTENSION_LOADER_CLASS_CACHE.get(ZClientFilter.class.getName());
+        for (String implClassName : clientFilterMap.keySet()) {
+            Class aClass = clientFilterMap.get(implClassName);
+            if (aClass == null) {
+                throw new RuntimeException("no match zClientFilter for " + ZClientFilter.class.getName());
+            }
+            clientFilterChain.addZClientFilter((ZClientFilter) aClass.newInstance());
+        }
+        CLIENT_FILTER_CHAIN = clientFilterChain;
     }
 
     /**
@@ -171,10 +188,12 @@ public class RpcClient {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InstantiationException, IllegalAccessException {
         RpcClient rpcClient = new RpcClient();
         RpcReferenceWrapper rpcReferenceWrapper = new RpcReferenceWrapper();
         rpcReferenceWrapper.setAimClass(UserService.class);
+        rpcReferenceWrapper.setGroup("dev");
+        rpcReferenceWrapper.setServiceToken("dawdwa");
         RpcReference reference = rpcClient.initApplication();
         //订阅服务
         rpcClient.doSubscribeService(UserService.class);

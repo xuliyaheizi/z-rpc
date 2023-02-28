@@ -1,4 +1,4 @@
-package com.zhulin.server.handler;
+package com.zhulin.server.wrapper;
 
 import lombok.Data;
 

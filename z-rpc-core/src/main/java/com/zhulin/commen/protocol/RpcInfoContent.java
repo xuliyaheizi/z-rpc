@@ -3,6 +3,8 @@ package com.zhulin.commen.protocol;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @Author:ZHULIN
@@ -33,4 +35,12 @@ public class RpcInfoContent implements Serializable {
      * 异常信息
      */
     private Throwable e;
+    /**
+     * 重视机制次数
+     */
+    private int retry;
+    /**
+     * 参数扩展
+     */
+    private Map<String, Object> attachments = new HashMap<>();
 }

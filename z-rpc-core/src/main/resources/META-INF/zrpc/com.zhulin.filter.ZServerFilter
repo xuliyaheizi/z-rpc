@@ -1,0 +1,2 @@
+logFilterImpl=com.zhulin.filter.server.impl.ServerLogFilterImpl
+tokenFilterImpl=com.zhulin.filter.server.impl.ServerTokenFilterImpl
