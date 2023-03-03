@@ -18,6 +18,6 @@ public class ClientLogFilterImpl implements ZClientFilter {
     @Override
     public void doFilter(List<ChannelFutureWrapper> src, RpcInfoContent rpcInfoContent) {
         rpcInfoContent.getAttachments().put("c_app_name", CommonClientCache.CLIENT_CONFIG.getApplicationName());
-        log.info(rpcInfoContent.getAttachments().get("c_app_name") + "do invoke ----> " + rpcInfoContent.getTargetServiceName());
+        log.info(rpcInfoContent.getAttachments().get("c_app_name") + " do invoke ----> " + rpcInfoContent.getTargetServiceName());
     }
 }

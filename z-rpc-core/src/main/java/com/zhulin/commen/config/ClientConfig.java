@@ -35,7 +35,7 @@ public class ClientConfig {
      */
     private String clientSerialize;
     /**
-     * 客户端发送数据的超时时间
+     * 客户端发送数据的超时时间  ms
      */
     private Integer timeOut;
     /**

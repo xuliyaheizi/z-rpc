@@ -1,15 +1,14 @@
 package com.zhulin.client.handler;
 
 import com.zhulin.commen.channel.ChannelFutureWrapper;
+import com.zhulin.commen.concurrent.TimeoutInvocation;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.utils.CommonUtil;
-import com.zhulin.concurrent.TimeoutInvocation;
 import com.zhulin.registry.URL;
 import com.zhulin.registry.zookeeper.ProviderNodeInfo;
 import com.zhulin.router.Selector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -23,13 +22,16 @@ import static com.zhulin.commen.cache.CommonClientCache.*;
  * @Date: 2023/2/24
  * @Description: 处理服务的连接，断开，按照服务名筛选
  */
-@Data
 @Slf4j
 public class ConnectionHandler {
     /**
      * Netty的核心连接器，专门用于负责和服务构建连接通信
      */
     public static Bootstrap bootstrap;
+
+    public static void setBootstrap(Bootstrap bootstrap) {
+        ConnectionHandler.bootstrap = bootstrap;
+    }
 
     /**
      * 构建单个连接通道 元操作，既要处理连接，还要统一将连接进行内存存储管理

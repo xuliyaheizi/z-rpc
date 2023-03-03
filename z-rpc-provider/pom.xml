@@ -10,11 +10,50 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>z-rpc-provider</artifactId>
+    <packaging>pom</packaging>
     <description>z-rpc生产者测试模块</description>
+    <modules>
+        <module>z-rpc-user2-provider</module>
+        <module>z-rpc-user1-provider</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>2.6.7</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zhulin</groupId>
+                <artifactId>z-rpc-spring-starter</artifactId>
+                <version>1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zhulin</groupId>
+                <artifactId>z-rpc-interface</artifactId>
+                <version>1.0-SNAPSHOT</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

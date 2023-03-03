@@ -1,5 +1,6 @@
 package com.zhulin.server.handler;
 
+import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.protocol.RpcProtocol;
 import com.zhulin.server.wrapper.ServerChannelReadData;
 import io.netty.channel.ChannelHandlerContext;
@@ -7,6 +8,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
 
 import static com.zhulin.commen.cache.CommonServerCache.SERVER_CHANNEL_DISPATCHER;
+import static com.zhulin.commen.cache.CommonServerCache.SERVER_SERIALIZE_FACTORY;
 
 /**
  * @Author:ZHULIN
@@ -33,6 +35,5 @@ public class ServerReadHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         log.error("{} 已经异常断开，异常原因：{}", ctx.channel(), cause.getMessage());
-        cause.printStackTrace();
     }
 }

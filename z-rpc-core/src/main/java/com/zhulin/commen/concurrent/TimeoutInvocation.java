@@ -1,4 +1,4 @@
-package com.zhulin.concurrent;
+package com.zhulin.commen.concurrent;
 
 import com.zhulin.commen.protocol.RpcInfoContent;
 import lombok.Data;

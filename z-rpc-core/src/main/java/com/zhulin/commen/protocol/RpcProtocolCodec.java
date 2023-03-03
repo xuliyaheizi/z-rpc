@@ -7,7 +7,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import lombok.extern.slf4j.Slf4j;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -40,7 +39,7 @@ public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol
         buffer.writeInt(rpcProtocol.getContentLength());
         //内容
         buffer.writeBytes(rpcProtocol.getContent());
-        buffer.writeBytes(RpcConstants.DEFAULT_DECODE_CHAR.getBytes(StandardCharsets.UTF_8));
+        //buffer.writeBytes(RpcConstants.DEFAULT_DECODE_CHAR.getBytes(StandardCharsets.UTF_8));
         list.add(buffer);
     }
 

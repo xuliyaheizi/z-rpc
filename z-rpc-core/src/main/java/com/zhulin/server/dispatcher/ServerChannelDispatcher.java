@@ -1,6 +1,7 @@
 package com.zhulin.server.dispatcher;
 
 import com.zhulin.commen.Exception.ZRpcException;
+import com.zhulin.commen.concurrent.NamedThreadFactory;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.protocol.RpcProtocol;
 import com.zhulin.server.wrapper.ServerChannelReadData;
@@ -35,8 +36,8 @@ public class ServerChannelDispatcher {
         //初始数据队列
         RPC_DATA_QUEUE = new ArrayBlockingQueue<>(queueSize);
         //初始线程池
-        executorService = new ThreadPoolExecutor(bizThreadNums, bizThreadNums, 0L, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(512));
+        executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.MILLISECONDS,
+                new SynchronousQueue<>(), new NamedThreadFactory("zrpc", true));
     }
 
     /**
@@ -70,10 +71,9 @@ public class ServerChannelDispatcher {
                                 //捕捉异常信息
                                 if (cause instanceof ZRpcException) {
                                     ZRpcException zRpcException = (ZRpcException) cause;
-                                    RpcInfoContent respInfo = zRpcException.getRpcInfoContent();
-                                    respInfo.setE(zRpcException);
+                                    rpcInfoContent.setE(zRpcException);
                                     RpcProtocol respProtocol =
-                                            new RpcProtocol(SERVER_SERIALIZE_FACTORY.serialize(respInfo));
+                                            new RpcProtocol(SERVER_SERIALIZE_FACTORY.serialize(rpcInfoContent));
                                     channelReadData.getCtx().writeAndFlush(respProtocol);
                                     return;
                                 }
@@ -114,7 +114,7 @@ public class ServerChannelDispatcher {
                             channelReadData.getCtx().writeAndFlush(respProtocol);
                         }
                     });
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -124,8 +124,8 @@ public class ServerChannelDispatcher {
     /**
      * 开启多线程接收客户端请求数据
      */
-    public void statDataConsumer() {
-        Thread thread = new Thread(new ServerJobCoreHandler(), "serverChannelRead");
+    public void startDataConsumer() {
+        Thread thread = new Thread(new ServerJobCoreHandler());
         thread.start();
     }
 }

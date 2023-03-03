@@ -1,16 +1,17 @@
-package com.zhulin.services.impl;
+package provider.serviceImpl;
 
-import com.zhulin.services.UserService;
+import com.zhulin.interfaces.UserService;
+import com.zhulin.spring.starter.common.ZRpcServer;
 
 /**
  * @Author:ZHULIN
- * @Date: 2023/2/24
+ * @Date: 2023/3/1
  * @Description:
  */
+@ZRpcServer(limit = 100)
 public class UserServiceImpl implements UserService {
     @Override
     public String sayHello(String msg) {
-        int i = 1 / 0;
         return msg + " hello world";
     }
 }

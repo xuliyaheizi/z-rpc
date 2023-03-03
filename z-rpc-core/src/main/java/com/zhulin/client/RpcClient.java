@@ -4,13 +4,12 @@ import com.alibaba.fastjson.JSON;
 import com.zhulin.client.handler.ClientReadHandler;
 import com.zhulin.client.handler.ConnectionHandler;
 import com.zhulin.client.reference.RpcReference;
-import com.zhulin.client.reference.RpcReferenceWrapper;
 import com.zhulin.commen.config.PropertiesBootstrap;
-import com.zhulin.commen.constants.RpcConstants;
 import com.zhulin.commen.event.ZRpcListenerLoader;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.protocol.RpcProtocol;
 import com.zhulin.commen.protocol.RpcProtocolCodec;
+import com.zhulin.commen.protocol.RpcProtocolFrameDecoder;
 import com.zhulin.commen.utils.CommonUtil;
 import com.zhulin.filter.ZClientFilter;
 import com.zhulin.filter.client.ClientFilterChain;
@@ -20,16 +19,12 @@ import com.zhulin.registry.RegistryService;
 import com.zhulin.registry.URL;
 import com.zhulin.router.ZRouter;
 import com.zhulin.serializer.SerializeFactory;
-import com.zhulin.services.UserService;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.DelimiterBasedFrameDecoder;
-import io.netty.handler.logging.LoggingHandler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,11 +60,12 @@ public class RpcClient {
         bootstrap.group(worker).channel(NioSocketChannel.class).handler(new ChannelInitializer<NioSocketChannel>() {
             @Override
             protected void initChannel(NioSocketChannel ch) throws Exception {
-                ByteBuf delimiter = Unpooled.copiedBuffer(RpcConstants.DEFAULT_DECODE_CHAR.getBytes());
-                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(CLIENT_CONFIG.getMaxServerRespDataSize(),
-                        delimiter));
+                //ByteBuf delimiter = Unpooled.copiedBuffer(RpcConstants.DEFAULT_DECODE_CHAR.getBytes());
+                //ch.pipeline().addLast(new DelimiterBasedFrameDecoder(CLIENT_CONFIG.getMaxServerRespDataSize(),
+                //        delimiter));
+                ch.pipeline().addLast(new RpcProtocolFrameDecoder());
                 //日志信息
-                ch.pipeline().addLast(new LoggingHandler());
+                //ch.pipeline().addLast(new LoggingHandler());
                 //协议体解编码器
                 ch.pipeline().addLast(new RpcProtocolCodec());
                 //获取响应数据
@@ -102,16 +98,25 @@ public class RpcClient {
 
         @Override
         public void run() {
-            try {
-                //从消息队列中获取信息内容
-                RpcInfoContent rpcInfoContent = SEND_QUEUE.take();
-                //通过序列化方式将信息序列化为字节数组
-                RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(rpcInfoContent));
-                //发送消息
-                ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(rpcInfoContent);
-                channelFuture.channel().writeAndFlush(rpcProtocol);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            while (true) {
+                try {
+                    //从消息队列中获取信息内容
+                    RpcInfoContent rpcInfoContent = SEND_QUEUE.take();
+                    //发送消息
+                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(rpcInfoContent);
+                    if (channelFuture != null) {
+                        Channel channel = channelFuture.channel();
+                        //如果出现服务端中断的情况需要兼容下
+                        if (!channel.isOpen()) {
+                            throw new RuntimeException("aim channel is not open!rpcInfoContent is " + rpcInfoContent);
+                        }
+                        //通过序列化方式将信息序列化为字节数组
+                        RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(rpcInfoContent));
+                        channel.writeAndFlush(rpcProtocol);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -188,20 +193,4 @@ public class RpcClient {
         }
     }
 
-    public static void main(String[] args) throws InstantiationException, IllegalAccessException {
-        RpcClient rpcClient = new RpcClient();
-        RpcReferenceWrapper rpcReferenceWrapper = new RpcReferenceWrapper();
-        rpcReferenceWrapper.setAimClass(UserService.class);
-        rpcReferenceWrapper.setGroup("dev");
-        rpcReferenceWrapper.setServiceToken("dawdwa");
-        RpcReference reference = rpcClient.initApplication();
-        //订阅服务
-        rpcClient.doSubscribeService(UserService.class);
-        //连接服务
-        ConnectionHandler.bootstrap = rpcClient.getBootstrap();
-        rpcClient.doConnectServer();
-        rpcClient.startSendMsg();
-        UserService userService = (UserService) reference.get(rpcReferenceWrapper);
-        System.out.println(userService.sayHello("zhulin"));
-    }
 }

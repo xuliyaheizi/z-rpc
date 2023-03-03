@@ -1,9 +1,10 @@
 package com.zhulin.server;
 
 import com.zhulin.commen.annotations.SPI;
+import com.zhulin.commen.concurrent.ServiceSemaphoreWrapper;
 import com.zhulin.commen.config.PropertiesBootstrap;
-import com.zhulin.commen.event.ZRpcListenerLoader;
 import com.zhulin.commen.protocol.RpcProtocolCodec;
+import com.zhulin.commen.protocol.RpcProtocolFrameDecoder;
 import com.zhulin.commen.utils.CommonUtil;
 import com.zhulin.filter.ZServerFilter;
 import com.zhulin.filter.server.ServerAfterFilterChain;
@@ -13,20 +14,14 @@ import com.zhulin.registry.RegistryService;
 import com.zhulin.registry.URL;
 import com.zhulin.serializer.SerializeFactory;
 import com.zhulin.server.handler.MaxConnectionLimitHandler;
-import com.zhulin.server.wrapper.RpcServiceWrapper;
 import com.zhulin.server.handler.ServerReadHandler;
-import com.zhulin.server.handler.ServerShutDownHook;
-import com.zhulin.services.impl.UserServiceImpl;
+import com.zhulin.server.wrapper.RpcServiceWrapper;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.DelimiterBasedFrameDecoder;
-import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedHashMap;
@@ -34,7 +29,6 @@ import java.util.LinkedHashMap;
 import static com.zhulin.commen.cache.CommonCache.EXTENSION_LOADER;
 import static com.zhulin.commen.cache.CommonCache.EXTENSION_LOADER_CLASS_CACHE;
 import static com.zhulin.commen.cache.CommonServerCache.*;
-import static com.zhulin.commen.constants.RpcConstants.DEFAULT_DECODE_CHAR;
 
 /**
  * @Author:ZHULIN
@@ -52,7 +46,6 @@ public class RpcServer {
     public void startApplication() throws InterruptedException {
         boss = new NioEventLoopGroup();
         workers = new NioEventLoopGroup();
-        //test
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(boss, workers).channel(NioServerSocketChannel.class)
                 //有数据立马发送
@@ -67,11 +60,12 @@ public class RpcServer {
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
-                        ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
-                        ch.pipeline().addLast(new DelimiterBasedFrameDecoder(SERVER_CONFIG.getMaxServerRequestData(),
-                                delimiter));
+                        //ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+                        //ch.pipeline().addLast(new DelimiterBasedFrameDecoder(SERVER_CONFIG.getMaxServerRequestData(),
+                        //        delimiter));
+                        ch.pipeline().addLast(new RpcProtocolFrameDecoder());
                         //服务端日志信息
-                        ch.pipeline().addLast(new LoggingHandler());
+                        //ch.pipeline().addLast(new LoggingHandler());
                         //协议体解码器
                         ch.pipeline().addLast(new RpcProtocolCodec());
                         //客户端信息处理器 这里面需要注意出现堵塞的情况发生，建议将核心业务内容分配给业务线程池处理
@@ -81,10 +75,9 @@ public class RpcServer {
         //批量注册服务
         this.batchRegistryUrl();
         //开始准备接收请求任务
-        SERVER_CHANNEL_DISPATCHER.statDataConsumer();
+        SERVER_CHANNEL_DISPATCHER.startDataConsumer();
         //netty服务端绑定端口号
         bootstrap.bind(SERVER_CONFIG.getServerPort()).sync();
-        log.info("[startApplication] server is started!");
     }
 
     /**
@@ -146,7 +139,15 @@ public class RpcServer {
         url.addParameter("host", CommonUtil.getIpAddress());
         url.addParameter("port", String.valueOf(SERVER_CONFIG.getServerPort()));
         url.addParameter("group", String.valueOf(rpcServiceWrapper.getGroup()));
+        url.addParameter("limit", String.valueOf(rpcServiceWrapper.getLimit()));
+        //设置服务端的限流器
+        SERVER_SERVICE_SEMAPHORE.put(interfaceClass.getName(),
+                new ServiceSemaphoreWrapper(rpcServiceWrapper.getLimit()));
         PROVIDER_URL_SET.add(url);
+        //判断服务是否需要权限校验
+        if (!CommonUtil.isEmpty(rpcServiceWrapper.getServiceToken())) {
+            PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(), rpcServiceWrapper);
+        }
     }
 
     /**
@@ -163,22 +164,9 @@ public class RpcServer {
                 }
                 for (URL url : PROVIDER_URL_SET) {
                     REGISTRY_SERVICE.register(url);
-                    log.info("[Server] export service {}", url.getServiceName());
                 }
             }
         }, "registryServerTask");
         task.start();
-    }
-
-    public static void main(String[] args) throws InterruptedException, InstantiationException, IllegalAccessException {
-        RpcServer rpcServer = new RpcServer();
-        rpcServer.initServerConfig();
-        //事件监听机制
-        ZRpcListenerLoader iRpcListenerLoader = new ZRpcListenerLoader();
-        iRpcListenerLoader.init();
-        RpcServiceWrapper rpcServiceWrapper = new RpcServiceWrapper(new UserServiceImpl(), "dev");
-        rpcServer.registryService(rpcServiceWrapper);
-        rpcServer.startApplication();
-        ServerShutDownHook.registryShutdownHook();
     }
 }

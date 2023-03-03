@@ -32,7 +32,6 @@ public class MaxConnectionLimitHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        System.out.println("connection limit handler");
         Channel channel = (Channel) msg;
         int conn = numConnection.incrementAndGet();
         if (conn > 0 && conn <= maxConnectionNum) {

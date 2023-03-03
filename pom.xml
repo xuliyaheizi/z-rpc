@@ -13,8 +13,8 @@
         <module>z-rpc-spring-starter</module>
         <module>z-rpc-provider</module>
         <module>z-rpc-consumer</module>
+        <module>z-rpc-interface</module>
     </modules>
-    <description>z-rpc</description>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>

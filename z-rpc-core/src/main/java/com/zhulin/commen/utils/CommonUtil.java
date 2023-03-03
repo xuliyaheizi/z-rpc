@@ -16,7 +16,7 @@ import java.util.List;
 public class CommonUtil {
 
     public static boolean isEmpty(String str) {
-        return str.length() == 0 || str == null;
+        return str == null || str.length() == 0;
     }
 
     public static boolean isEmptyList(List list) {

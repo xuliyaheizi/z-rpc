@@ -3,7 +3,7 @@ package com.zhulin.filter.client.impl;
 import com.zhulin.commen.channel.ChannelFutureWrapper;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.utils.CommonUtil;
-import com.zhulin.concurrent.TimeoutInvocation;
+import com.zhulin.commen.concurrent.TimeoutInvocation;
 import com.zhulin.filter.ZClientFilter;
 
 import java.util.Iterator;

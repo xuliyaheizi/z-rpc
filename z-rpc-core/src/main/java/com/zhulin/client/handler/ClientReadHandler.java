@@ -2,7 +2,7 @@ package com.zhulin.client.handler;
 
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.protocol.RpcProtocol;
-import com.zhulin.concurrent.TimeoutInvocation;
+import com.zhulin.commen.concurrent.TimeoutInvocation;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
@@ -24,10 +24,6 @@ public class ClientReadHandler extends ChannelInboundHandlerAdapter {
         //将字节数组反序列化为RpcInfoContent
         RpcInfoContent rpcInfoContent = CLIENT_SERIALIZE_FACTORY.deSerialize(RpcInfoContent.class,
                 rpcProtocol.getContent());
-        //判断是否有异常信息
-        if (rpcInfoContent.getE() != null) {
-            rpcInfoContent.getE().printStackTrace();
-        }
         if (!RESP_MAP.containsKey(rpcInfoContent.getUuid())) {
             throw new IllegalArgumentException("server response is error");
         }
@@ -46,6 +42,5 @@ public class ClientReadHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         log.error("远程主机{}由于{}原因已关闭", ctx.channel(), cause.getMessage());
-        cause.printStackTrace();
     }
 }

@@ -1,5 +1,6 @@
 package com.zhulin.commen.cache;
 
+import com.zhulin.commen.concurrent.ServiceSemaphoreWrapper;
 import com.zhulin.commen.config.ServerConfig;
 import com.zhulin.filter.server.ServerAfterFilterChain;
 import com.zhulin.filter.server.ServerBeforeFilterChain;
@@ -49,4 +50,9 @@ public class CommonServerCache {
      * 服务端多线程处理客户端请求数据
      */
     public static ServerChannelDispatcher SERVER_CHANNEL_DISPATCHER = new ServerChannelDispatcher();
+    /**
+     * 限流的包装类
+     */
+    public static Map<String, ServiceSemaphoreWrapper> SERVER_SERVICE_SEMAPHORE = new ConcurrentHashMap<>();
+    public static Boolean IS_STARTED = false;
 }

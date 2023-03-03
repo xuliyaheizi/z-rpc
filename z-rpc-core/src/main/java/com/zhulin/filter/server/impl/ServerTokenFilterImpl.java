@@ -1,11 +1,12 @@
 package com.zhulin.filter.server.impl;
 
 import com.zhulin.commen.annotations.SPI;
-import com.zhulin.commen.cache.CommonServerCache;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.utils.CommonUtil;
 import com.zhulin.filter.ZServerFilter;
 import com.zhulin.server.wrapper.RpcServiceWrapper;
+
+import static com.zhulin.commen.cache.CommonServerCache.PROVIDER_SERVICE_WRAPPER_MAP;
 
 /**
  * @Author:ZHULIN
@@ -17,8 +18,7 @@ public class ServerTokenFilterImpl implements ZServerFilter {
     @Override
     public void doFilter(RpcInfoContent rpcInfoContent) {
         String clientToken = String.valueOf(rpcInfoContent.getAttachments().get("serverToken"));
-        RpcServiceWrapper rpcServiceWrapper =
-                CommonServerCache.PROVIDER_SERVICE_WRAPPER_MAP.get(rpcInfoContent.getTargetServiceName());
+        RpcServiceWrapper rpcServiceWrapper = PROVIDER_SERVICE_WRAPPER_MAP.get(rpcInfoContent.getTargetServiceName());
         String serviceToken = rpcServiceWrapper.getServiceToken();
         if (CommonUtil.isEmpty(serviceToken)) {
             return;

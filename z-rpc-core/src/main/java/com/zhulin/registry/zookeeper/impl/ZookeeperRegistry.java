@@ -6,13 +6,13 @@ import com.zhulin.commen.event.data.URLChangeWrapper;
 import com.zhulin.commen.event.handler.ZRpcEvent;
 import com.zhulin.commen.event.handler.ZRpcNodeChangeEvent;
 import com.zhulin.commen.event.handler.ZRpcUpdateEvent;
+import com.zhulin.commen.utils.CommonUtil;
 import com.zhulin.registry.AbstractRegistry;
 import com.zhulin.registry.RegistryService;
 import com.zhulin.registry.URL;
 import com.zhulin.registry.zookeeper.AbstractZookeeperClient;
 import com.zhulin.registry.zookeeper.CuratorZookeeperClient;
 import com.zhulin.registry.zookeeper.ProviderNodeInfo;
-import com.zhulin.services.UserService;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 
@@ -64,15 +64,26 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
 
     @Override
     public void doAfterSubscribe(URL url) {
-        //监听是否有新的服务注册
+        //监听服务上线下线
         String servicePath = url.getParameters().get("servicePath");
-        // newServerNodePath ---> /ZRPC/com.zhulin.services.UserService/provider
-        String newServerNodePath = ROOT + "/" + servicePath;
-        watchChildNodeData(newServerNodePath);
+        if (!CommonUtil.isEmpty(servicePath)) {
+            // watchChildNodePath ---> /ZRPC/com.zhulin.services.UserService/provider
+            String watchChildNodePath = ROOT + "/" + servicePath;
+            watchChildNodeData(watchChildNodePath);
+        }
+        //监听服务节点数据变化
         String providerIpStrJson = url.getParameters().get("providerIps");
-        List<String> providerIpList = JSON.parseObject(providerIpStrJson, List.class);
-        for (String providerIp : providerIpList) {
-            this.watchNodeDataChange(ROOT + "/" + servicePath + "/" + providerIp);
+        if (!CommonUtil.isEmpty(providerIpStrJson)) {
+            List<String> providerIpList = JSON.parseObject(providerIpStrJson, List.class);
+            for (String providerIp : providerIpList) {
+                //监听服务节点信息变化
+                watchNodeDataChange(ROOT + "/" + servicePath + "/" + providerIp);
+            }
+        }
+        //监听单个服务节点数据变化
+        String providerPath = url.getParameters().get("providerPath");
+        if (!CommonUtil.isEmpty(providerPath)) {
+            watchNodeDataChange(ROOT + "/" + providerPath);
         }
     }
 
@@ -80,21 +91,21 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
      * 订阅服务节点内部的数据变化
      * 监听/ZRPC/com.zhulin.services.UserService/provider/192.168.100.141:8080的数据变化
      *
-     * @param newServerNodePath
+     * @param watchNodeDataPath
      */
-    public void watchNodeDataChange(String newServerNodePath) {
-        zkClient.watchNodeData(newServerNodePath, new Watcher() {
+    public void watchNodeDataChange(String watchNodeDataPath) {
+        zkClient.watchNodeData(watchNodeDataPath, new Watcher() {
             @Override
             public void process(WatchedEvent watchedEvent) {
-                System.out.println(watchedEvent);
-                String path = watchedEvent.getPath();
-                String nodeData = zkClient.getNodeData(path);
-                if (nodeData != null) {
-                    nodeData = nodeData.replace(";", "/");
+                //监听节点数据修改事件
+                if (watchedEvent.getType() == Event.EventType.NodeDataChanged) {
+                    String path = watchedEvent.getPath();
+                    String nodeData = zkClient.getNodeData(path);
+                    //nodeData = nodeData.replace(";", "/");
                     ProviderNodeInfo providerNodeInfo = URL.buildProviderNodeFromUrlStr(nodeData);
                     ZRpcEvent iRpcEvent = new ZRpcNodeChangeEvent(providerNodeInfo);
                     ZRpcListenerLoader.sendEvent(iRpcEvent);
-                    watchNodeDataChange(newServerNodePath);
+                    watchNodeDataChange(watchNodeDataPath);
                 }
             }
         });
@@ -102,25 +113,35 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
 
     /**
      * 监听节点数据
-     * 监听/ZRPC/com.zhulin.services.UserService/provider下是否有数据变化
+     * 监听/ZRPC/com.zhulin.services.UserService/provider下列表是否有变化
      *
-     * @param newServerNodePath
+     * @param watchChildNodePath
      */
-    private void watchChildNodeData(String newServerNodePath) {
-        zkClient.watchChildNodeData(newServerNodePath, new Watcher() {
+    private void watchChildNodeData(String watchChildNodePath) {
+        zkClient.watchChildNodeData(watchChildNodePath, new Watcher() {
             @Override
             public void process(WatchedEvent event) {
-                String path = event.getPath();
-                //如果childrenData为空,说明该服务已经没有提供者了
-                List<String> childrenData = zkClient.getChildrenData(path);
-                URLChangeWrapper urlChangeWrapper = new URLChangeWrapper();
-                urlChangeWrapper.setProviderUrl(childrenData);
-                urlChangeWrapper.setServiceName(path.split("/")[2]);
-                //自定义的一套监听组件
-                ZRpcEvent iRpcEvent = new ZRpcUpdateEvent(urlChangeWrapper);
-                ZRpcListenerLoader.sendEvent(iRpcEvent);
-                //收到回调后再注册一次监听，这样能保证一直都收到信息
-                watchChildNodeData(path);
+                if (event.getType() == Event.EventType.NodeChildrenChanged) {
+                    String path = event.getPath();
+                    //如果childrenData为空,说明该服务已经没有提供者了
+                    List<String> childrenData = zkClient.getChildrenData(path);
+                    URLChangeWrapper urlChangeWrapper = new URLChangeWrapper();
+                    urlChangeWrapper.setProviderUrl(childrenData);
+                    urlChangeWrapper.setServiceName(path.split("/")[2]);
+                    if (!CommonUtil.isEmptyList(childrenData)) {
+                        Map<String, String> result = new HashMap<>();
+                        for (String ipAndHost : childrenData) {
+                            String childData = zkClient.getNodeData(path + "/" + ipAndHost);
+                            result.put(ipAndHost, childData);
+                        }
+                        urlChangeWrapper.setNodeDataUrl(result);
+                    }
+                    //自定义的一套监听组件
+                    ZRpcEvent iRpcEvent = new ZRpcUpdateEvent(urlChangeWrapper);
+                    ZRpcListenerLoader.sendEvent(iRpcEvent);
+                    //收到回调后再注册一次监听，这样能保证一直都收到信息
+                    watchChildNodeData(path);
+                }
             }
         });
     }
@@ -145,14 +166,6 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
             result.put(ipAndHost, childData);
         }
         return result;
-    }
-
-    public static void main(String[] args) {
-        AbstractRegistry zkClient = new ZookeeperRegistry("8.134.120.71:20011");
-        Map<String, String> providerNodeInfos = zkClient.getProviderNodeInfos(UserService.class.getName());
-        String str = providerNodeInfos.get("192.168.100.141:8080");
-        ProviderNodeInfo providerNodeInfo = URL.buildProviderNodeFromUrlStr(str);
-        System.out.println(providerNodeInfo);
     }
 
     @Override
@@ -197,4 +210,5 @@ public class ZookeeperRegistry extends AbstractRegistry implements RegistryServi
         zkClient.deleteNode(getConsumerPath(url));
         super.unSubscriber(url);
     }
+
 }

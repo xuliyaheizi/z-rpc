@@ -15,6 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ServerLogFilterImpl implements ZServerFilter {
     @Override
     public void doFilter(RpcInfoContent rpcInfoContent) {
-        log.info(rpcInfoContent.getAttachments().get("c_app_name") + "do invoke ----> " + rpcInfoContent.getTargetServiceName() + "#" + rpcInfoContent.getTargetMethod());
+        log.info(rpcInfoContent.getAttachments().get("c_app_name") + " do invoke ----> " + rpcInfoContent.getTargetServiceName() + "#" + rpcInfoContent.getTargetMethod());
     }
 }

@@ -1,2 +1,5 @@
-logFilterImpl=com.zhulin.filter.server.impl.ServerLogFilterImpl
+#服务端前置限流策略
+serviceBeforeFilterImpl=com.zhulin.filter.server.impl.ServerServiceBeforeFilterImpl
+#logFilterImpl=com.zhulin.filter.server.impl.ServerLogFilterImpl
 tokenFilterImpl=com.zhulin.filter.server.impl.ServerTokenFilterImpl
+serviceAfterFilterImpl=com.zhulin.filter.server.impl.ServerServiceAfterFilterImpl
