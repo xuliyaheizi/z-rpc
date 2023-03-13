@@ -1,1 +1,3 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.zhulin.spring.starter.autoConfig.ZRpcServerAutoConfiguration,com.zhulin.spring.starter.autoConfig.ZRpcClientAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.zhulin.spring.starter.autoConfig.ZRpcServerAutoConfiguration,\
+  com.zhulin.spring.starter.autoConfig.ZRpcClientAutoConfiguration

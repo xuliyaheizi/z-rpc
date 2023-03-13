@@ -37,10 +37,12 @@ public class ClientReadHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.debug("远程主机{}已关闭", ctx.channel().remoteAddress());
+        ctx.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         log.error("远程主机{}由于{}原因已关闭", ctx.channel(), cause.getMessage());
+        ctx.close();
     }
 }

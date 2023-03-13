@@ -3,7 +3,6 @@ package com.zhulin.commen.protocol;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,6 +13,7 @@ import java.util.Map;
  */
 @Data
 public class RpcInfoContent implements Serializable {
+    private static final long serialVersionUID = -3611379458492006176L;
 
     /**
      * 请求的方法名

@@ -1,13 +1,15 @@
 package com.zhulin.server.dispatcher;
 
 import com.zhulin.commen.Exception.ZRpcException;
-import com.zhulin.commen.concurrent.NamedThreadFactory;
 import com.zhulin.commen.protocol.RpcInfoContent;
 import com.zhulin.commen.protocol.RpcProtocol;
 import com.zhulin.server.wrapper.ServerChannelReadData;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.zhulin.commen.cache.CommonServerCache.*;
 
@@ -32,13 +34,13 @@ public class ServerChannelDispatcher {
      * @param queueSize
      * @param bizThreadNums
      */
-    public void init(int queueSize, int bizThreadNums) {
-        //初始数据队列
-        RPC_DATA_QUEUE = new ArrayBlockingQueue<>(queueSize);
-        //初始线程池
-        executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.MILLISECONDS,
-                new SynchronousQueue<>(), new NamedThreadFactory("zrpc", true));
-    }
+    //public void init(int queueSize, int bizThreadNums) {
+    //    //初始数据队列
+    //    RPC_DATA_QUEUE = new ArrayBlockingQueue<>(queueSize);
+    //    //初始线程池
+    //    executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.MILLISECONDS,
+    //            new SynchronousQueue<>(), new NamedThreadFactory("zrpc", true));
+    //}
 
     /**
      * 添加数据
@@ -124,7 +126,9 @@ public class ServerChannelDispatcher {
     /**
      * 开启多线程接收客户端请求数据
      */
-    public void startDataConsumer() {
+    public void startDataConsumer(int queueSize, ThreadPoolExecutor threadPoolExecutor) {
+        RPC_DATA_QUEUE = new ArrayBlockingQueue<>(queueSize);
+        executorService = threadPoolExecutor;
         Thread thread = new Thread(new ServerJobCoreHandler());
         thread.start();
     }

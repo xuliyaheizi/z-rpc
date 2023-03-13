@@ -32,7 +32,7 @@ public class ZRpcServerAutoConfiguration implements InitializingBean, Applicatio
             return;
         }
         //输出项目启动信息
-        printBanner();
+        //printBanner();
         long beginTime = System.currentTimeMillis();
         rpcServer = new RpcServer();
         rpcServer.initServerConfig();

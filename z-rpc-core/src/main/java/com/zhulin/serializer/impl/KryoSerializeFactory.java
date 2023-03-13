@@ -1,12 +1,14 @@
 package com.zhulin.serializer.impl;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.zhulin.serializer.SerializeFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
  * @Author:ZHULIN
@@ -19,39 +21,51 @@ public class KryoSerializeFactory implements SerializeFactory {
         @Override
         protected Kryo initialValue() {
             Kryo kryo = new Kryo();
+            ////支持对象循环引用（否则会栈溢出）
+            kryo.setReferences(true);
+            kryo.setRegistrationRequired(false);
             return kryo;
         }
     };
 
     @Override
     public <T> byte[] serialize(T t) {
-        Output output = null;
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        Output output = new Output(os);
         try {
-            Kryo kryo = kryos.get();
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            output = new Output(byteArrayOutputStream);
-            kryo.writeClassAndObject(output, t);
+            kryos.get().writeClassAndObject(output, t);
             return output.toBytes();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (output != null) {
+            try {
+                os.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
                 output.close();
+            } catch (KryoException e) {
+                e.printStackTrace();
             }
         }
     }
 
     @Override
     public <T> T deSerialize(Class<T> clazz, byte... bytes) {
-        Input input = null;
+        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+        Input input = new Input(is);
         try {
             Kryo kryo = kryos.get();
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-            input = new Input(byteArrayInputStream);
             return (T) kryo.readClassAndObject(input);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             if (input != null) {
                 input.close();
             }
