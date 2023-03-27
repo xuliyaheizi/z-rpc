@@ -14,7 +14,7 @@ import static com.zhulin.commen.cache.CommonServerCache.SERVER_SERVICE_SEMAPHORE
 /**
  * @Author:ZHULIN
  * @Date: 2023/2/28
- * @Description:
+ * @Description: 配置限流策略
  */
 @Slf4j
 @SPI("before")

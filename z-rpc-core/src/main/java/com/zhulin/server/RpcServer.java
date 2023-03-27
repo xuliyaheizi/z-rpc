@@ -179,4 +179,10 @@ public class RpcServer {
             REGISTRY_SERVICE.register(url);
         }
     }
+
+    public static void main(String[] args) {
+        int i=6;
+        Integer j=6;
+        System.out.println(i==j);
+    }
 }
