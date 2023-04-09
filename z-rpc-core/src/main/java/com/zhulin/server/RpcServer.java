@@ -47,56 +47,54 @@ public class RpcServer {
     /**
      * 启动netty服务端
      */
-    public void startApplication() throws InterruptedException {
+    public void startApplication() {
 
-        thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final ThreadPoolExecutor threadPoolExecutor =
-                        ThreadPoolUtil.makeServerThreadPool(RpcServer.class.getName(), 0, Integer.MAX_VALUE);
-                EventLoopGroup boss = new NioEventLoopGroup();
-                EventLoopGroup workers = new NioEventLoopGroup();
+        thread = new Thread(() -> {
+            final ThreadPoolExecutor threadPoolExecutor =
+                    ThreadPoolUtil.makeServerThreadPool(RpcServer.class.getName(), 0, Integer.MAX_VALUE);
+            EventLoopGroup boss = new NioEventLoopGroup();
+            EventLoopGroup workers = new NioEventLoopGroup();
 
-                try {
-                    ServerBootstrap bootstrap = new ServerBootstrap();
-                    bootstrap.group(boss, workers).channel(NioServerSocketChannel.class)
-                            //有数据立马发送
-                            .option(ChannelOption.TCP_NODELAY, true).option(ChannelOption.SO_KEEPALIVE, true)
-                            //服务端采用单一长连接的模式，这里所支持的最大连接数应该和机器本身的性能有关
-                            //连接防护的handler应该绑定在Main-Reactor上
-                            .handler(new MaxConnectionLimitHandler(SERVER_CONFIG.getMaxConnections())).childHandler(new ChannelInitializer<NioSocketChannel>() {
-                                @Override
-                                protected void initChannel(NioSocketChannel ch) throws Exception {
-                                    ch.pipeline().addLast(new RpcProtocolFrameDecoder());
-                                    //服务端日志信息
-                                    //ch.pipeline().addLast(new LoggingHandler());
-                                    //协议体解码器
-                                    ch.pipeline().addLast(new RpcProtocolCodec());
-                                    //客户端信息处理器 这里面需要注意出现堵塞的情况发生，建议将核心业务内容分配给业务线程池处理
-                                    ch.pipeline().addLast(new ServerReadHandler());
-                                }
-                            });
-                    //netty服务端绑定端口号
-                    ChannelFuture channelFuture = bootstrap.bind(SERVER_CONFIG.getServerPort()).sync();
-                    //批量注册服务
-                    batchRegistryUrl();
-                    //开始准备接收请求任务
-                    SERVER_CHANNEL_DISPATCHER.startDataConsumer(SERVER_CONFIG.getServerQueueSize(), threadPoolExecutor);
-                    //等待关闭
-                    channelFuture.channel().closeFuture().sync();
-                } catch (Exception e) {
-                    if (e instanceof InterruptedException) {
-                        log.info(">>>>>>>>>>> z-rpc netty server stop.");
-                    } else {
-                        log.error(">>>>>>>>>>> z-rpc netty server error.", e);
-                    }
-                } finally {
-                    threadPoolExecutor.shutdown();
-                    boss.shutdownGracefully();
-                    workers.shutdownGracefully();
+            try {
+                ServerBootstrap bootstrap = new ServerBootstrap();
+                //设置主从线程池
+                bootstrap.group(boss, workers).channel(NioServerSocketChannel.class)
+                        //有数据立马发送
+                        .option(ChannelOption.TCP_NODELAY, true).option(ChannelOption.SO_KEEPALIVE, true)
+                        //服务端采用单一长连接的模式，这里所支持的最大连接数应该和机器本身的性能有关
+                        //连接防护的handler应该绑定在Main-Reactor上
+                        .handler(new MaxConnectionLimitHandler(SERVER_CONFIG.getMaxConnections())).childHandler(new ChannelInitializer<NioSocketChannel>() {
+                            @Override
+                            protected void initChannel(NioSocketChannel ch) {
+                                //协议头解码器
+                                ch.pipeline().addLast(new RpcProtocolFrameDecoder());
+                                //协议体解码器
+                                ch.pipeline().addLast(new RpcProtocolCodec());
+                                //客户端信息处理器 这里面需要注意出现堵塞的情况发生，建议将核心业务内容分配给业务线程池处理
+                                ch.pipeline().addLast(new ServerReadHandler());
+                            }
+                        });
+                //netty服务端绑定端口号
+                ChannelFuture channelFuture = bootstrap.bind(SERVER_CONFIG.getServerPort()).sync();
+                //批量注册服务
+                batchRegistryUrl();
+                //开始准备接收请求任务
+                SERVER_CHANNEL_DISPATCHER.startDataConsumer(SERVER_CONFIG.getServerQueueSize(), threadPoolExecutor);
+                //等待关闭
+                channelFuture.channel().closeFuture().sync();
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    log.info(">>>>>>>>>>> z-rpc netty server stop.");
+                } else {
+                    log.error(">>>>>>>>>>> z-rpc netty server error.", e);
                 }
+            } finally {
+                threadPoolExecutor.shutdown();
+                boss.shutdownGracefully();
+                workers.shutdownGracefully();
             }
         }, "nettyServer");
+
         //设置守护线程
         thread.setDaemon(true);
         thread.start();
@@ -134,7 +132,7 @@ public class RpcServer {
     /**
      * 服务注册
      *
-     * @param rpcServiceWrapper
+     * @param rpcServiceWrapper 服务注册信息
      */
     public void registryService(RpcServiceWrapper rpcServiceWrapper) {
         Object serviceBean = rpcServiceWrapper.getServiceObj();
@@ -178,11 +176,5 @@ public class RpcServer {
         for (URL url : PROVIDER_URL_SET) {
             REGISTRY_SERVICE.register(url);
         }
-    }
-
-    public static void main(String[] args) {
-        int i=6;
-        Integer j=6;
-        System.out.println(i==j);
     }
 }

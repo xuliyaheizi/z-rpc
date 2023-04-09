@@ -18,20 +18,14 @@ import java.util.List;
 @ChannelHandler.Sharable
 public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol> {
     /**
-     * 协议体开头标准长度
-     */
-    private final int BASE_LENGTH = 2 + 4;
-
-    /**
      * 序列化
      *
-     * @param ctx
-     * @param rpcProtocol
-     * @param list
-     * @throws Exception
+     * @param ctx         ChannelHandlerContext
+     * @param rpcProtocol RpcProtocol
+     * @param list        List<Object>
      */
     @Override
-    protected void encode(ChannelHandlerContext ctx, RpcProtocol rpcProtocol, List<Object> list) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, RpcProtocol rpcProtocol, List<Object> list) {
         ByteBuf buffer = ctx.alloc().buffer();
         //魔数
         buffer.writeShort(rpcProtocol.getMagicNum());
@@ -39,27 +33,28 @@ public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol
         buffer.writeInt(rpcProtocol.getContentLength());
         //内容
         buffer.writeBytes(rpcProtocol.getContent());
-        //buffer.writeBytes(RpcConstants.DEFAULT_DECODE_CHAR.getBytes(StandardCharsets.UTF_8));
         list.add(buffer);
     }
 
     /**
      * 反序列化
      *
-     * @param ctx
-     * @param byteBuf
-     * @param list
-     * @throws Exception
+     * @param ctx     ChannelHandlerContext
+     * @param byteBuf ByteBuf
+     * @param list    List<Object>
      */
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> list) throws Exception {
-        if (byteBuf.readableBytes() >= BASE_LENGTH) {
-            //判断魔数
+    protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> list) {
+        //协议体开头标准长度
+        int protocolHeaderLength = 2 + 4;
+        //可读字节长度大于协议体开头标准长度
+        if (byteBuf.readableBytes() >= protocolHeaderLength) {
+            //判断传输协议是否合法
             if (byteBuf.readShort() != RpcConstants.MAGIC_NUM) {
                 ctx.close();
                 return;
             }
-            //这里对应了RpcProtocol对象的contentLength字段
+            //读取内容长度
             int length = byteBuf.readInt();
             if (byteBuf.readableBytes() < length) {
                 //说明剩余的数据包不完整
@@ -74,7 +69,7 @@ public class RpcProtocolCodec extends MessageToMessageCodec<ByteBuf, RpcProtocol
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
     }
 }

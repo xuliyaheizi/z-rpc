@@ -14,6 +14,7 @@
         <module>z-rpc-provider</module>
         <module>z-rpc-consumer</module>
         <module>z-rpc-interface</module>
+        <module>z-rpc-monitor</module>
     </modules>
 
     <properties>

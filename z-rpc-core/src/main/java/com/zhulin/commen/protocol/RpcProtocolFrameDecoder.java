@@ -11,6 +11,14 @@ import static com.zhulin.commen.cache.CommonServerCache.SERVER_CONFIG;
  * @Description: rpc传输消息长度规定，防止粘包和半包现象
  */
 public class RpcProtocolFrameDecoder extends LengthFieldBasedFrameDecoder {
+    /**
+     *
+     * @param maxFrameLength 最大长度
+     * @param lengthFieldOffset 长度字段偏移量
+     * @param lengthFieldLength 长度字段长度
+     * @param lengthAdjustment  长度调整
+     * @param initialBytesToStrip 丢弃的字节数
+     */
     public RpcProtocolFrameDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength,
                                    int lengthAdjustment, int initialBytesToStrip) {
         super(maxFrameLength, lengthFieldOffset, lengthFieldLength, lengthAdjustment, initialBytesToStrip);
