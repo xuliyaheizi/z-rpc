@@ -14,7 +14,7 @@ import static com.zhulin.commen.cache.CommonCache.*;
  * @Date: 2023/2/27
  * @Description: 自定义SPI机制
  */
-public class ExtensionLoader {
+public class  ExtensionLoader {
 
     private static final String EXTENSION_LOADER_DIR_PREFIX = "META-INF/zrpc/";
 
